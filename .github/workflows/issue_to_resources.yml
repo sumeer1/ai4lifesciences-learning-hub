@@ -20,20 +20,28 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const body = context.payload.issue.body || "";
-            const url = (body.match(/https?:\/\/\S+/) || [])[0] || "";
-            if (!url) core.setFailed("No URL found in issue");
+            const body  = context.payload.issue.body  || "";
+            const title = context.payload.issue.title || "";
 
-            function sectionValue(title){
-              const re = new RegExp(`###\\s*${title}\\s*\\n+([^\\n]+)`, "i");
+            function getSection(name){
+              const re = new RegExp(`###\\s*${name}\\s*\\n+([\\s\\S]*?)(?:\\n###|\\n*$)`, "i");
               const m  = body.match(re);
-              return (m ? m[1].trim() : "");
+              return m ? m[1].trim() : "";
             }
-            const type = (sectionValue("Type") || "").toLowerCase();
-            const year = (sectionValue("Year").match(/\\d{4}/) || [])[0] || "";
-            const domains = [...body.matchAll(/- \\[x\\]\\s+([A-Za-z0-9_-]+)/g)].map(m=>m[1].toLowerCase());
-            const format = (sectionValue("Format tags") || "").toLowerCase().split(/[;,]/).map(s=>s.trim()).filter(Boolean);
-            const level  = (sectionValue("Level tags") || "").toLowerCase().split(/[;,]/).map(s=>s.trim()).filter(Boolean);
+            function firstUrl(s){
+              const m = (s || "").match(/https?:\/\/[^\s)]+/);
+              return m ? m[0] : "";
+            }
+
+            // Try section, then whole body, then title
+            let url = firstUrl(getSection("Resource URL")) || firstUrl(body) || firstUrl(title);
+            if (!url) core.setFailed("No URL found. Please enter a valid https:// link in the 'Resource URL' field.");
+
+            const type = (getSection("Type") || "").toLowerCase();
+            const year = (getSection("Year").match(/\d{4}/) || [])[0] || "";
+            const domains = [...body.matchAll(/- \[x\]\s+([A-Za-z0-9_-]+)/g)].map(m=>m[1].toLowerCase());
+            const format = (getSection("Format tags") || "").toLowerCase().split(/[;,]/).map(s=>s.trim()).filter(Boolean);
+            const level  = (getSection("Level tags")  || "").toLowerCase().split(/[;,]/).map(s=>s.trim()).filter(Boolean);
 
             core.setOutput("url", url);
             core.setOutput("type", type);
