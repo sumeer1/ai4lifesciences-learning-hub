@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI4LifeSciences — Learning Hub</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>AI4LifeSciences — Learning Hub</h1>
+    <nav class="actions">
+      <button id="addResourceBtn" class="btn primary">+ Add resource</button>
+      <a id="repoLink" class="btn subtle" target="_blank" rel="noopener">Repo</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <div id="topic-rail" class="topic-rail"></div>
+
+    <div class="searchbox">
+      <input id="search" type="text" placeholder="Search title, creator, platform, year, abstract…">
+      <span class="slash">/</span>
+    </div>
+
+    <section class="filters">
+      <div class="facet"><div class="facet-title">Type</div><div id="facet-type" class="chips"></div></div>
+      <div class="facet"><div class="facet-title">Format</div><div id="facet-format" class="chips"></div></div>
+      <div class="facet"><div class="facet-title">Level</div><div id="facet-level" class="chips"></div></div>
+
+      <div class="facet"><div class="facet-title">Year</div>
+        <select id="year"><option value="">Any</option></select>
+      </div>
+
+      <div class="facet"><div class="facet-title">Sort</div>
+        <select id="sort">
+          <option value="year-desc">Year ↓</option>
+          <option value="year-asc">Year ↑</option>
+          <option value="title-asc">Title A–Z</option>
+        </select>
+      </div>
+
+      <div class="facet buttons">
+        <button id="clear" class="btn subtle">Clear filters</button>
+        <span id="count" class="count"></span>
+      </div>
+    </section>
+
+    <div id="empty" class="empty hidden">No results. Try clearing filters.</div>
+    <div id="results" class="grid"></div>
+  </main>
+
+  <footer class="wrap foot">
+    <small>Made for <strong>AI4LifeSciences</strong>. Add resources by editing <code>data/resources.json</code> or use the “Add resource” button.</small>
+  </footer>
+
+  <!-- 🔧 set your repo here -->
+  <script>
+    window.AI4LS_CFG = { owner: "YOUR_GITHUB_USERNAME", repo: "ai4lifesciences-learning-hub", label: "add-resource" };
+  </script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
