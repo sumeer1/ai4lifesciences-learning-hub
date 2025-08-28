@@ -1,0 +1,47 @@
+name: Add resource
+description: Paste a resource URL and (optionally) tags.
+title: "Add resource"
+labels: ["add-resource"]
+body:
+  - type: input
+    id: url
+    attributes:
+      label: Resource URL
+      description: Paste the canonical URL (video, article, notebook, docs, course...)
+      placeholder: "https://..."
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options: ["tutorial","lecture","demo","course","notes","docs"]
+  - type: checkboxes
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - { label: ml-basics }
+        - { label: bioinformatics }
+        - { label: genomics }
+        - { label: medicine }
+        - { label: neuroscience }
+        - { label: math }
+        - { label: programming }
+        - { label: tools }
+        - { label: datasets }
+  - type: input
+    id: format
+    attributes:
+      label: Format tags (comma-separated)
+      placeholder: "video, article, notebook, docs"
+  - type: input
+    id: level
+    attributes:
+      label: Level tags (comma-separated)
+      placeholder: "beginner, intermediate, advanced"
+  - type: input
+    id: year
+    attributes:
+      label: Year (optional)
+      placeholder: "2025"
