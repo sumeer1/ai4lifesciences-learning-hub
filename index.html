@@ -10,8 +10,15 @@
   <header class="topbar">
     <h1>AI4LifeSciences — Learning Hub</h1>
     <nav class="actions">
-      <button id="addResourceBtn" class="btn primary">+ Add resource</button>
-      <a id="repoLink" class="btn subtle" target="_blank" rel="noopener">Repo</a>
+      <!-- Use a direct link instead of a JS button -->
+      <a class="btn primary"
+         href="https://github.com/sumeer1/ai4lifesciences-learning-hub/issues/new?template=add-resource.yml&labels=add-resource"
+         target="_blank" rel="noopener">+ Add resource</a>
+
+      <!-- Hard-code repo link so app.js config isn't required -->
+      <a id="repoLink" class="btn subtle"
+         href="https://github.com/sumeer1/ai4lifesciences-learning-hub"
+         target="_blank" rel="noopener">Repo</a>
     </nav>
   </header>
 
@@ -54,13 +61,7 @@
     <small>Made for <strong>AI4LifeSciences</strong>. Add resources by editing <code>data/resources.json</code> or use the “Add resource” button.</small>
   </footer>
 
-  <!-- 🔧 set your repo here -->
-
-  <script>
-    <a class="btn primary"
-   href="https://github.com/sumeer1/ai4lifesciences-learning-hub/issues/new?template=add-resource.yml&labels=add-resource"
-   target="_blank" rel="noopener">+ Add resource</a>
-  </script>
-  <script src="assets/app.js"></script>
+  <!-- No config needed; just load the script (add a cache-buster) -->
+  <script src="assets/app.js?v=3"></script>
 </body>
 </html>
