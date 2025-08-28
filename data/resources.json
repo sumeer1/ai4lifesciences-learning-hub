@@ -1,1 +1,17 @@
+[
+  {
+    "title": "Getting Started — replace me",
+    "creators": ["Your Name"],
+    "venue": "Course",
+    "date": "2025-01-01",
+    "year": 2025,
+    "url": "https://example.com/tutorial",
+    "code": "",
+    "abstract": "Delete me after your first Issue import.",
+    "type": ["tutorial"],
+    "domain": ["ml-basics"],
+    "format": ["video"],
+    "level": ["beginner"]
+  }
+]
 
