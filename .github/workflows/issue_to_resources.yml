@@ -1,0 +1,130 @@
+name: Add resource (Issue ➜ data/resources.json)
+
+on:
+  issues:
+    types: [opened, edited, reopened, labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  add-resource:
+    if: contains(github.event.issue.labels.*.name, 'add-resource')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || "";
+            const url = (body.match(/https?:\/\/\S+/) || [])[0] || "";
+            if (!url) core.setFailed("No URL found in issue");
+
+            function sectionValue(title){
+              const re = new RegExp(`###\\s*${title}\\s*\\n+([^\\n]+)`, "i");
+              const m  = body.match(re);
+              return (m ? m[1].trim() : "");
+            }
+            const type = (sectionValue("Type") || "").toLowerCase();
+            const year = (sectionValue("Year").match(/\\d{4}/) || [])[0] || "";
+            const domains = [...body.matchAll(/- \\[x\\]\\s+([A-Za-z0-9_-]+)/g)].map(m=>m[1].toLowerCase());
+            const format = (sectionValue("Format tags") || "").toLowerCase().split(/[;,]/).map(s=>s.trim()).filter(Boolean);
+            const level  = (sectionValue("Level tags") || "").toLowerCase().split(/[;,]/).map(s=>s.trim()).filter(Boolean);
+
+            core.setOutput("url", url);
+            core.setOutput("type", type);
+            core.setOutput("year", year);
+            core.setOutput("domains", JSON.stringify(domains));
+            core.setOutput("format", JSON.stringify(format));
+            core.setOutput("level", JSON.stringify(level));
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install requests beautifulsoup4
+
+      - name: Update data/resources.json
+        env:
+          URL:     ${{ steps.parse.outputs.url }}
+          TYPE:    ${{ steps.parse.outputs.type }}
+          YEAR:    ${{ steps.parse.outputs.year }}
+          DOMAINS: ${{ steps.parse.outputs.domains }}
+          FORMAT:  ${{ steps.parse.outputs.format }}
+          LEVEL:   ${{ steps.parse.outputs.level }}
+        run: |
+          python - <<'PY'
+          import os, re, json, pathlib, requests
+          from bs4 import BeautifulSoup
+
+          def first_only(names):
+            names=[n for n in names if n]
+            if not names: return []
+            return [f"{names[0]} et al."] if len(names)>1 else [names[0]]
+
+          def fetch_meta(u):
+            try:
+              r=requests.get(u,timeout=20,headers={"User-Agent":"Mozilla/5.0"}); r.raise_for_status()
+              soup=BeautifulSoup(r.text,"html.parser")
+              def meta(*names):
+                for n in names:
+                  tag=soup.find("meta",attrs={"property":n}) or soup.find("meta",attrs={"name":n})
+                  if tag and tag.get("content"): return tag["content"].strip()
+                return None
+              title=meta("og:title","twitter:title","title") or (soup.title.string.strip() if soup.title else u)
+              author=meta("author","article:author","twitter:creator")
+              site=meta("og:site_name","application-name") or re.sub(r"^https?://","",u).split("/")[0]
+              date=meta("article:published_time","og:updated_time","date","dc.date","datePublished")
+              year=None
+              if date:
+                m=re.search(r"(\\d{4})",date)
+                if m: year=int(m.group(1))
+              return {"title":title,"creators":first_only([author]) if author else [],"venue":site,"date":date,"year":year}
+            except Exception:
+              return {"title":u,"creators":[],"venue":"","date":None,"year":None}
+
+          url=os.environ["URL"]; type_=os.environ.get("TYPE","").strip().lower()
+          year=os.environ.get("YEAR","").strip()
+          domains=json.loads(os.environ.get("DOMAINS","[]"))
+          format_=json.loads(os.environ.get("FORMAT","[]"))
+          level=json.loads(os.environ.get("LEVEL","[]"))
+
+          data_path=pathlib.Path("data/resources.json"); data_path.parent.mkdir(parents=True,exist_ok=True)
+          data=json.loads(data_path.read_text(encoding="utf-8")) if data_path.exists() else []
+
+          meta=fetch_meta(url)
+          if year and year.isdigit(): meta["year"]=int(year)
+
+          entry={
+            "title":meta["title"],"creators":meta["creators"],"venue":meta["venue"],
+            "date":meta["date"],"year":meta["year"],"url":url,"code":"","abstract":"",
+            "type":[type_] if type_ else ["tutorial"],"domain":domains,"format":format_,"level":level,
+            "system":[],"task":[]
+          }
+
+          # upsert by URL
+          for i,r in enumerate(data):
+            if r.get("url")==url:
+              data[i]=entry
+              break
+          else:
+            data.append(entry)
+
+          data_path.write_text(json.dumps(data,indent=2,ensure_ascii=False),encoding="utf-8")
+          print("Updated", data_path)
+          PY
+
+      - name: Comment, relabel, close
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner=context.repo.owner, repo=context.repo.repo, issue_number=context.issue.number;
+            await github.rest.issues.createComment({ owner, repo, issue_number, body:"✅ Resource added to `data/resources.json`. Thanks!" });
+            try{ await github.rest.issues.removeLabel({ owner, repo, issue_number, name: "add-resource" }); } catch(e){}
+            try{ await github.rest.issues.addLabels({ owner, repo, issue_number, labels:["ingested"] }); } catch(e){}
+            await github.rest.issues.update({ owner, repo, issue_number, state:"closed" });
